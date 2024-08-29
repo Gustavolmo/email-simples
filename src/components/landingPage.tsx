@@ -1,5 +1,4 @@
 import { signIn, signOut, useSession } from "next-auth/react";
-import { useEffect } from "react";
 import cartasDisparando from "../assets/cartas-disparando.svg";
 import cartasCaindo from "../assets/cartas-caindo.svg";
 import Image from "next/image";
@@ -17,7 +16,7 @@ export default function LandingPage() {
   return (
     <>
       <header className="bg-linear-gradient from-es-green to-es-yellow">
-        <section className="flex justify-between p-20 max-w-[1800px] mx-auto">
+        <section className="flex flex-col-reverse 2xl:flex-row justify-between p-20 max-w-[1800px] mx-auto">
           <article className={`text-white`}>
             <div className="mb-10">
               <h1 className="text-9xl font-bold">Email Simples</h1>
@@ -43,7 +42,7 @@ export default function LandingPage() {
           </article>
 
           <div>
-            <Image src={cartasDisparando} alt="cartas-disparando" />
+            <Image className="-rotate-45 2xl:rotate-0" src={cartasDisparando} alt="cartas-disparando" />
           </div>
         </section>
       </header>
@@ -101,10 +100,7 @@ export default function LandingPage() {
                 <p className="text-8xl font-bold opacity-20 w-24">3.</p>
                 <div className="text-2xl font-thin">
                   <p>
-                    <b>Adicione</b> destinatários manualmente <b>ou</b>
-                  </p>
-                  <p>
-                    faça o <b>upload</b> de uma <b>planilha excel</b>
+                    Crie o <b>título</b> e <b>corpo</b> do seu email
                   </p>
                 </div>
               </div>
@@ -112,12 +108,8 @@ export default function LandingPage() {
               <div className="flex items-end mb-20 gap-4">
                 <p className="text-8xl font-bold opacity-20 w-24">4.</p>
                 <div className="text-2xl font-thin">
-                  <p>
-                    <b>Adicione</b> destinatários manualmente <b>ou</b>
-                  </p>
-                  <p>
-                    faça o <b>upload</b> de uma <b>planilha excel</b>
-                  </p>
+                  <p>Aperte <b>enviar</b> e confira o status do envio no applicativo</p>
+                  <p>e também <b>no seu Gmail</b></p>
                 </div>
               </div>
 
@@ -129,7 +121,7 @@ export default function LandingPage() {
               </button>
             </article>
 
-            <div>
+            <div className="hidden 2xl:block">
               <Image src={cartasCaindo} alt="cartas-caindo" />
             </div>
           </section>
