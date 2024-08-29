@@ -365,28 +365,32 @@ export default function EmailEditor() {
         </div>
 
         {sendingEmail && (
-          <div className="flex flex-col gap-4">
-            <p>
+          <div className="flex flex-col gap-4 p-4 bg-white rounded-md border border-neutral-400">
+            <p className="text-2xl text-green-600">
               <b>Enviados:</b> {successEmail.length} de {guestList.length}
             </p>
             {failedEmail.length > 0 && (
               <>
-                <p>
-                  <b>Falhas de envio:</b> {failedEmail.length}
+                <p className="text-red-600">
+                  <b>Não enviados: {failedEmail.length}</b> {" "}
+                  <span className="text-thin text-sm">
+                    confira se os emails estão corretos
+                  </span>
                 </p>
-                {failedEmail.map((failedGuest, index) => {
-                  return (
-                    <div className="flex gap-1 text-red-900" key={index}>
-                      <b>Falha de envio:</b>
-                      <p className="border border-red-500 px-2">
-                        {failedGuest.name}
-                      </p>
-                      <p className="border border-red-500 px-2">
-                        {failedGuest.email}
-                      </p>
-                    </div>
-                  );
-                })}
+                <div>
+                  {failedEmail.map((failedGuest, index) => {
+                    return (
+                      <div className="flex gap-1" key={index}>
+                        <p className="border border-red-500 px-2 grow bg-neutral-100">
+                          {failedGuest.name}
+                        </p>
+                        <p className="border border-red-500 px-2 grow bg-neutral-100">
+                          {failedGuest.email}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
               </>
             )}
           </div>
