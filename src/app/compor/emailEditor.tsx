@@ -54,6 +54,7 @@ export default function EmailEditor() {
   ) => {
     if (editorRef.current?.querySelector("img")) {
       setErrorMessage("Máximo de 1 imagem por email");
+      alert("Máximo de 1 imagem por email");
       return;
     }
     if (fileInputRef.current) fileInputRef.current.click();
@@ -62,10 +63,12 @@ export default function EmailEditor() {
   const insertImage = (file: File) => {
     if (file.type !== "image/png") {
       setErrorMessage("Apenas images tipo .PNG são suportadas");
+      alert("Apenas images tipo .PNG são suportadas");
       return;
     }
     if (file.size > MAX_FILE_SIZE) {
       setErrorMessage("Seu arquivo deve ter menos de 9MB");
+      alert("Seu arquivo deve ter menos de 9MB");
       return;
     }
     const reader = new FileReader();
@@ -128,23 +131,27 @@ export default function EmailEditor() {
     sendToList: Recipient[],
     test: boolean = false
   ) => {
-    const images = editorRef.current?.querySelectorAll("img")
+    const images = editorRef.current?.querySelectorAll("img");
     if (images && images.length > 1) {
       setErrorMessage("O email supporta no máximo 1 imagem");
+      alert("O email supporta no máximo 1 imagem");
       return;
     }
 
     if (assunto === "") {
       setErrorMessage("O assunto não pode estar vazio");
+      alert("O assunto não pode estar vazio");
       return;
     }
     if (corpoDoEmail === "") {
       setErrorMessage("O corpo do email não pode estar vazio");
+      alert("O corpo do email não pode estar vazio");
       return;
     }
 
     if (guestList.length === 0 && !test) {
       setErrorMessage("Você precisa de pelo menos 1 destinatário");
+      alert("Você precisa de pelo menos 1 destinatário");
       return;
     }
 
@@ -164,7 +171,7 @@ export default function EmailEditor() {
       emailCopy = emailCopyWrapper.innerHTML;
     }
     setErrorMessage("");
-    updateSendingEmail(true);
+    if (!test) updateSendingEmail(true);
 
     let failListUpdate: Recipient[] = [];
     let successListUpdate: Recipient[] = [];

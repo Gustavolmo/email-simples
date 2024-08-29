@@ -1,5 +1,5 @@
 "use client";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 
 export default function ComporHeader() {
   const { data: session } = useSession();
@@ -14,6 +14,12 @@ export default function ComporHeader() {
         <div className="text-xl font-thin">
           <p>{session?.user?.email}</p>
         </div>
+        <button
+          className="w-fit bg-es-yellow text-es-blue px-2 py-1 mt-4 rounded-md shadow-md font-bold"
+          onClick={() => signOut({ callbackUrl: "/" })}
+        >
+          Sign out
+        </button>
       </div>
     </nav>
   );
