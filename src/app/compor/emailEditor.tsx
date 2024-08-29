@@ -13,6 +13,8 @@ import { useSession } from "next-auth/react";
 export default function EmailEditor() {
   const { data: session } = useSession();
 
+  const [guestListLength, setGuestListLength] = useState<number>(0);
+
   const [base64Image, setBase64Image] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
 
@@ -155,6 +157,11 @@ export default function EmailEditor() {
       return;
     }
 
+    setErrorMessage("");
+    if (!test) {
+      updateSendingEmail(true);
+    }
+
     const imageTag = editorRef.current?.querySelector("img");
     let emailCopy: string = "";
 
@@ -170,11 +177,14 @@ export default function EmailEditor() {
       }
       emailCopy = emailCopyWrapper.innerHTML;
     }
-    setErrorMessage("");
-    if (!test) updateSendingEmail(true);
 
     let failListUpdate: Recipient[] = [];
     let successListUpdate: Recipient[] = [];
+    updateSuccessEmails([]);
+    updateFailedEmails([]);
+
+    setGuestListLength(guestList.length);
+
     sendToList.forEach(async (guest) => {
       const status = await sendEmail(
         guest,
@@ -373,8 +383,14 @@ export default function EmailEditor() {
 
         {sendingEmail && (
           <div className="flex flex-col gap-4 p-4 bg-white rounded-md border border-neutral-400">
-            <p className="text-2xl text-green-600">
-              <b>Enviados:</b> {successEmail.length} de {guestList.length}
+            <p
+              className={`text-2xl ${
+                failedEmail.length + successEmail.length === guestListLength
+                  ? "text-green-600"
+                  : "text-neutral-800"
+              }`}
+            >
+              <b>Enviados:</b> {successEmail.length} de {guestListLength}
             </p>
             {failedEmail.length > 0 && (
               <>

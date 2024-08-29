@@ -33,10 +33,10 @@ const useComporStore = create<State>((set) => ({
   setCorpoDoEmail: (newCorpo: string) => set({ corpoDoEmail: newCorpo }),
   updateGuestList: (newGuestList: Recipient[]) =>
     set({ guestList: newGuestList }),
-  updateFailedEmails: (newGuestList: Recipient[]) =>
-    set({ failedEmail: newGuestList }),
-  updateSuccessEmails: (newGuestList: Recipient[]) =>
-    set({ successEmail: newGuestList }),
+  updateFailedEmails: (newFailedGuestList: Recipient[]) =>
+    set({ failedEmail: newFailedGuestList }),
+  updateSuccessEmails: (newSuccessGuestList: Recipient[]) =>
+    set({ successEmail: newSuccessGuestList }),
   updateSendingEmail: (value: boolean) => set({ sendingEmail: value }),
 }));
 
