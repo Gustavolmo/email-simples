@@ -349,13 +349,20 @@ export default function EmailEditor() {
         </div>
 
         <div className="my-16">
-          <p
-            onClick={() => setErrorMessage("")}
-            className={`text-lg text-red-600 h-8 w-fit
-            ${errorMessage === "" ? "" : " cursor-pointer "}`}
-          >
-            {errorMessage}
-          </p>
+          {errorMessage && (
+            <p
+              className={`bg-red-200  text-lg text-red-600 h-8 w-fit italic rounded-md px-1`}
+            >
+              {errorMessage}
+
+              <span
+                onClick={() => setErrorMessage("")}
+                className="ml-2 pl-4 pr-2 cursor-pointer"
+              >
+                X
+              </span>
+            </p>
+          )}
           <button
             onClick={() => handleSendEmail(guestList)}
             className="border text-4xl border-black my-2 py-2 px-4 w-fit bg-es-yellow ml-auto"
@@ -372,7 +379,7 @@ export default function EmailEditor() {
             {failedEmail.length > 0 && (
               <>
                 <p className="text-red-600">
-                  <b>Não enviados: {failedEmail.length}</b> {" "}
+                  <b>Não enviados: {failedEmail.length}</b>{" "}
                   <span className="text-thin text-sm">
                     confira se os emails estão corretos
                   </span>
