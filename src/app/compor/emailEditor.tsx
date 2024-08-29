@@ -128,6 +128,12 @@ export default function EmailEditor() {
     sendToList: Recipient[],
     test: boolean = false
   ) => {
+    const images = editorRef.current?.querySelectorAll("img")
+    if (images && images.length > 1) {
+      setErrorMessage("O email supporta no máximo 1 imagem");
+      return;
+    }
+
     if (assunto === "") {
       setErrorMessage("O assunto não pode estar vazio");
       return;
