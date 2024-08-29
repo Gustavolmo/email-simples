@@ -9,12 +9,6 @@ export default function LandingPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  //TODO - Remove debugging logs
-  useEffect(() => {
-    console.log(session);
-    console.log(status);
-  }, [status, session]);
-
   const onSingIn = () => {
     if (status === "authenticated") router.push("/compor");
     else signIn("google", { callbackUrl: "/compor" });

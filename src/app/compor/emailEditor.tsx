@@ -177,7 +177,6 @@ export default function EmailEditor() {
         failListUpdate.push(guest);
         updateFailedEmails(failListUpdate);
       }
-      console.log(status);
     });
   };
 
