@@ -5,18 +5,23 @@ import {
   leftAlignmentIcon,
   rightAlignmentIcon,
 } from "@/assets/icons/hero-icons";
-import useComporStore, { Recipient } from "@/state-store/compor/compor-store";
+import useComporStore, { Recipient } from "@/state-store/compor-store";
 import { RefObject, useCallback, useRef, useState } from "react";
-import { sendEmail } from "../api/send/sendEmail";
+import { sendEmail } from "../api/sendEmail";
 import { useSession } from "next-auth/react";
 
 export default function EmailEditor() {
   const { data: session } = useSession();
 
-  const [guestListLength, setGuestListLength] = useState<number>(0);
-
   const [base64Image, setBase64Image] = useState<string>("");
-  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [currentGuestListBatchLenth, setCurrentGuestListBatchLength] =
+    useState<number>(0);
+
+  const editorRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const colorIndicatorLetterRef = useRef<HTMLParagraphElement>(null);
+
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
   const {
     failedEmail,
@@ -31,11 +36,6 @@ export default function EmailEditor() {
     setCorpoDoEmail,
     updateSendingEmail,
   } = useComporStore();
-
-  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-  const editorRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const colorIndicatorLetterRef = useRef<HTMLParagraphElement>(null);
 
   const handleAssuntoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAssunto(e.target.value);
@@ -55,7 +55,6 @@ export default function EmailEditor() {
     fileInputRef: RefObject<HTMLInputElement>
   ) => {
     if (editorRef.current?.querySelector("img")) {
-      setErrorMessage("Máximo de 1 imagem por email");
       alert("Máximo de 1 imagem por email");
       return;
     }
@@ -64,12 +63,10 @@ export default function EmailEditor() {
 
   const insertImage = (file: File) => {
     if (file.type !== "image/png") {
-      setErrorMessage("Apenas images tipo .PNG são suportadas");
       alert("Apenas images tipo .PNG são suportadas");
       return;
     }
     if (file.size > MAX_FILE_SIZE) {
-      setErrorMessage("Seu arquivo deve ter menos de 9MB");
       alert("Seu arquivo deve ter menos de 9MB");
       return;
     }
@@ -130,35 +127,28 @@ export default function EmailEditor() {
   );
 
   const handleSendEmail = async (
-    sendToList: Recipient[],
-    test: boolean = false
+    guestList: Recipient[],
+    isIsTesting: boolean = false
   ) => {
     const images = editorRef.current?.querySelectorAll("img");
     if (images && images.length > 1) {
-      setErrorMessage("O email supporta no máximo 1 imagem");
       alert("O email supporta no máximo 1 imagem");
       return;
     }
-
     if (assunto === "") {
-      setErrorMessage("O assunto não pode estar vazio");
       alert("O assunto não pode estar vazio");
       return;
     }
     if (corpoDoEmail === "") {
-      setErrorMessage("O corpo do email não pode estar vazio");
       alert("O corpo do email não pode estar vazio");
       return;
     }
-
-    if (guestList.length === 0 && !test) {
-      setErrorMessage("Você precisa de pelo menos 1 destinatário");
+    if (guestList.length === 0 && !isIsTesting) {
       alert("Você precisa de pelo menos 1 destinatário");
       return;
     }
 
-    setErrorMessage("");
-    if (!test) {
+    if (!isIsTesting) {
       updateSendingEmail(true);
     }
 
@@ -178,14 +168,14 @@ export default function EmailEditor() {
       emailCopy = emailCopyWrapper.innerHTML;
     }
 
-    let failListUpdate: Recipient[] = [];
-    let successListUpdate: Recipient[] = [];
     updateSuccessEmails([]);
     updateFailedEmails([]);
+    let failListRegister: Recipient[] = [];
+    let successListRegister: Recipient[] = [];
 
-    setGuestListLength(guestList.length);
+    setCurrentGuestListBatchLength(guestList.length);
 
-    sendToList.forEach(async (guest) => {
+    const promises = guestList.map(async (guest) => {
       const status = await sendEmail(
         guest,
         assunto,
@@ -193,209 +183,204 @@ export default function EmailEditor() {
         base64Image
       );
       if (status === "success") {
-        successListUpdate.push(guest);
-        updateSuccessEmails(successListUpdate);
+        successListRegister.push(guest);
+        updateSuccessEmails(successListRegister);
       }
       if (status === "error") {
-        failListUpdate.push(guest);
-        updateFailedEmails(failListUpdate);
+        failListRegister.push(guest);
+        updateFailedEmails(failListRegister);
       }
     });
+
+    await Promise.all(promises);
+    updateSendingEmail(false);
   };
 
   return (
     <>
       <section className="p-20 max-w-[1500px] mx-auto text-xl font-normal">
-        <div className="flex items-center gap-2 mb-3 text-lg">
+        <div className="flex flex-col text-neutral-600 items-left gap-2 mb-3 text-lg p-2">
           <p>
-            <b>Importante:</b> Coloque o seguint texto onde você deseja ter o
-            nome do convidado
+            Coloque o seguint texto onde você deseja ter o nome do convidado
           </p>
           <input
             readOnly
             onClick={async () =>
               await navigator.clipboard.writeText("##guest##")
             }
-            className="border bg-white w-28 py-1 px-2 rounded-md"
+            className="border border-neutral-400 w-28 rounded-md px-2 bg-neutral-100 "
             value={"##guest##"}
           />
         </div>
+        <article className="border-2 border-neutral-200 bg-neutral-200 shadow-lg">
+          <input
+            className="w-full px-6 py-2 border"
+            placeholder="assunto"
+            type="text"
+            name="assunto"
+            id="assunto"
+            onChange={handleAssuntoChange}
+          />
 
-        <input
-          className="w-full mb-6 px-6 py-2 rounded-md border border-neutral-400"
-          placeholder="assunto"
-          type="text"
-          name="assunto"
-          id="assunto"
-          onChange={handleAssuntoChange}
-        />
+          <div className="h-12 bg-neutral-200 flex items-center px-6 border gap-8">
+            <div>
+              <input
+                type="file"
+                accept="image/*"
+                style={{ display: "none" }}
+                ref={fileInputRef}
+                onChange={handleImageUpload}
+              />
+              <div
+                className="bg-white rounded-md px-1 cursor-pointer"
+                onClick={() => handleProxyUploadClick(fileInputRef)}
+              >
+                {imageIcon("32px")}
+              </div>
+            </div>
 
-        <div className="h-12 bg-neutral-200 flex items-center px-6 rounded-t-md border border-neutral-400 gap-8">
-          <div>
-            <input
-              type="file"
-              accept="image/*"
-              style={{ display: "none" }}
-              ref={fileInputRef}
-              onChange={handleImageUpload}
-            />
-            <div
-              className="bg-white rounded-md px-1 cursor-pointer"
-              onClick={() => handleProxyUploadClick(fileInputRef)}
-            >
-              {imageIcon("32px")}
+            <div className="flex gap-4">
+              <button
+                onClick={() => applyFontFormat("bold")}
+                className="bg-white rounded-md w-8 h-8 font-extrabold"
+              >
+                n
+              </button>
+              <button
+                onClick={() => applyFontFormat("italic")}
+                className="bg-white rounded-md pr-1 w-8 h-8 italic"
+              >
+                i
+              </button>
+              <button
+                onClick={() => applyFontFormat("underline")}
+                className="bg-white rounded-md w-8 h-8 underline"
+              >
+                s
+              </button>
+            </div>
+
+            <div className="flex gap-4">
+              <button
+                onClick={() => applyAlignment("justifyLeft")}
+                className="bg-white rounded-md w-8 h-8 font-extrabold"
+              >
+                {leftAlignmentIcon("28px")}
+              </button>
+              <button
+                onClick={() => applyAlignment("justifyCenter")}
+                className="bg-white rounded-md w-8 h-8 font-extrabold flex items-center justify-center"
+              >
+                {centerAlignmentIcon("24px")}
+              </button>
+              <button
+                onClick={() => applyAlignment("justifyRight")}
+                className="bg-white rounded-md w-8 h-8 pl-1 font-extrabold"
+              >
+                {rightAlignmentIcon("28px")}
+              </button>
+            </div>
+
+            <div className="flex gap-4">
+              <select
+                className="w-20 truncate text-base"
+                onChange={(e) => {
+                  applyFontFormat("fontName", e.target.value);
+                  e.target.value = "";
+                }}
+              >
+                <option className="hidden" value="">
+                  Font
+                </option>
+                <option value="Arial">Arial</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Courier New">Courier New</option>
+              </select>
+
+              <select
+                className="w-20 truncate text-base"
+                onChange={(e) => {
+                  applyFontFormat("fontSize", e.target.value);
+                  e.target.value = "";
+                }}
+              >
+                <option className="hidden" value="">
+                  Size
+                </option>
+                <option value="3">normal</option>
+                <option value="5">médio</option>
+                <option value="6">Grande</option>
+                <option value="7">XGrande</option>
+              </select>
+            </div>
+
+            <div className="flex gap-1">
+              <p ref={colorIndicatorLetterRef}>A</p>
+              <input
+                className="w-8"
+                onChange={(e) => applyColor(e.target.value)}
+                type="color"
+              />
             </div>
           </div>
 
-          <div className="flex gap-4">
+          <div
+            className="min-h-[600px] py-10 px-20 text-[16px] bg-white border"
+            id="email-editor"
+            contentEditable
+            ref={editorRef}
+            onInput={handleCorpoChange}
+          />
+
+          <div className="p-2 flex items-center gap-2 w-[500px]">
             <button
-              onClick={() => applyFontFormat("bold")}
-              className="bg-white rounded-md w-8 h-8 font-extrabold"
+              className="border border-black my-2 p-2 px-4 w-52 bg-white rounded-md"
+              onClick={() =>
+                handleSendEmail(
+                  [
+                    {
+                      name: session!.user!.name!,
+                      email: session!.user!.email!,
+                    },
+                  ],
+                  true
+                )
+              }
             >
-              n
+              Teste
             </button>
-            <button
-              onClick={() => applyFontFormat("italic")}
-              className="bg-white rounded-md pr-1 w-8 h-8 italic"
-            >
-              i
-            </button>
-            <button
-              onClick={() => applyFontFormat("underline")}
-              className="bg-white rounded-md w-8 h-8 underline"
-            >
-              s
-            </button>
-          </div>
-
-          <div className="flex gap-4">
-            <button
-              onClick={() => applyAlignment("justifyLeft")}
-              className="bg-white rounded-md w-8 h-8 font-extrabold"
-            >
-              {leftAlignmentIcon("28px")}
-            </button>
-            <button
-              onClick={() => applyAlignment("justifyCenter")}
-              className="bg-white rounded-md w-8 h-8 font-extrabold flex items-center justify-center"
-            >
-              {centerAlignmentIcon("24px")}
-            </button>
-            <button
-              onClick={() => applyAlignment("justifyRight")}
-              className="bg-white rounded-md w-8 h-8 pl-1 font-extrabold"
-            >
-              {rightAlignmentIcon("28px")}
-            </button>
-          </div>
-
-          <div className="flex gap-4">
-            <select
-              className="w-20 truncate text-base"
-              onChange={(e) => {
-                applyFontFormat("fontName", e.target.value);
-                e.target.value = "";
-              }}
-            >
-              <option className="hidden" value="">
-                Font
-              </option>
-              <option value="Arial">Arial</option>
-              <option value="Times New Roman">Times New Roman</option>
-              <option value="Courier New">Courier New</option>
-            </select>
-
-            <select
-              className="w-20 truncate text-base"
-              onChange={(e) => {
-                applyFontFormat("fontSize", e.target.value);
-                e.target.value = "";
-              }}
-            >
-              <option className="hidden" value="">
-                Size
-              </option>
-              <option value="3">normal</option>
-              <option value="5">médio</option>
-              <option value="6">Grande</option>
-              <option value="7">XGrande</option>
-            </select>
-          </div>
-
-          <div className="flex gap-1">
-            <p ref={colorIndicatorLetterRef}>A</p>
-            <input
-              className="w-8"
-              onChange={(e) => applyColor(e.target.value)}
-              type="color"
-            />
-          </div>
-        </div>
-
-        <div
-          className="min-h-[600px] py-10 px-20 text-[16px] bg-white border border-neutral-400 rounded-b-md"
-          id="email-editor"
-          contentEditable
-          ref={editorRef}
-          onInput={handleCorpoChange}
-        />
-
-        <div className="flex items-center gap-2 w-[500px]">
-          <button
-            className="border border-black my-2 py-2 px-4 w-52 bg-white"
-            onClick={() =>
-              handleSendEmail(
-                [{ name: session!.user!.name!, email: session!.user!.email! }],
-                true
-              )
-            }
-          >
-            Teste
-          </button>
-          <p className="text-sm italic">
-            Selecione para enviar <b>1 convite</b>
-            <br /> para o seu próprio email como teste
-          </p>
-        </div>
-
-        <div className="my-16">
-          {errorMessage && (
-            <p
-              className={`bg-red-200  text-lg text-red-600 h-8 w-fit italic rounded-md px-1`}
-            >
-              {errorMessage}
-
-              <span
-                onClick={() => setErrorMessage("")}
-                className="ml-2 pl-4 pr-2 cursor-pointer"
-              >
-                X
-              </span>
+            <p className="text-sm italic">
+              Selecione para enviar <b>1 convite</b>
+              <br /> para o seu próprio email como teste
             </p>
-          )}
-          <button
-            onClick={() => handleSendEmail(guestList)}
-            className="border text-4xl border-black my-2 py-2 px-4 w-fit bg-es-yellow ml-auto"
-          >
-            Enviar Todos
-          </button>
-        </div>
+          </div>
+        </article>
 
-        {sendingEmail && (
-          <div className="flex flex-col gap-4 p-4 bg-white rounded-md border border-neutral-400">
+        {/* SEND FOR REAL */}
+        <article className="border-2 border-neutral-200 mt-16 shadow-lg">
+          <div className="my-16 flex justify-center">
+            <button
+              onClick={() => handleSendEmail(guestList)}
+              className="border text-3xl rounded-md text-white bg-es-blue my-2 py-4 px-6 w-fit"
+            >
+              Enviar Todos
+            </button>
+          </div>
+
+          {/* STATUS COUNTER */}
+          <div className="flex flex-col gap-4 p-4 bg-white border-2 border-neutral-200">
             <p
               className={`text-2xl ${
-                failedEmail.length + successEmail.length === guestListLength
-                  ? "text-green-600"
-                  : "text-neutral-800"
+                sendingEmail ? "text-green-600" : "text-neutral-800"
               }`}
             >
-              <b>Enviados:</b> {successEmail.length} de {guestListLength}
+              <b>{sendingEmail ? "Enviando..." : "Enviados:"}</b>{" "}
+              {successEmail.length} de {currentGuestListBatchLenth}
             </p>
             {failedEmail.length > 0 && (
               <>
-                <p className="text-red-600">
-                  <b>Não enviados: {failedEmail.length}</b>{" "}
+                <p className="text-red-600 leading-3">
+                  <b>Não enviados: {failedEmail.length}</b> <br />
                   <span className="text-thin text-sm">
                     confira se os emails estão corretos
                   </span>
@@ -417,7 +402,7 @@ export default function EmailEditor() {
               </>
             )}
           </div>
-        )}
+        </article>
       </section>
     </>
   );

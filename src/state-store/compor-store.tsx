@@ -29,15 +29,23 @@ const useComporStore = create<State>((set) => ({
   successEmail: [],
   sendingEmail: false,
 
-  setAssunto: (newAssunto: string) => set({ assunto: newAssunto }),
-  setCorpoDoEmail: (newCorpo: string) => set({ corpoDoEmail: newCorpo }),
+  setAssunto: (newAssunto: string) =>
+    set({ assunto: newAssunto }),
+
+  setCorpoDoEmail: (newCorpo: string) =>
+    set({ corpoDoEmail: newCorpo }),
+
   updateGuestList: (newGuestList: Recipient[]) =>
     set({ guestList: newGuestList }),
+
   updateFailedEmails: (newFailedGuestList: Recipient[]) =>
     set({ failedEmail: newFailedGuestList }),
+
   updateSuccessEmails: (newSuccessGuestList: Recipient[]) =>
     set({ successEmail: newSuccessGuestList }),
-  updateSendingEmail: (value: boolean) => set({ sendingEmail: value }),
+
+  updateSendingEmail: (value: boolean) =>
+    set({ sendingEmail: value }),
 }));
 
 export default useComporStore;

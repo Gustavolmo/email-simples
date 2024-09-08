@@ -18,6 +18,7 @@ const config: Config = {
           "linear-gradient(to bottom right, var(--tw-gradient-stops))",
       },
       screens: {
+        'xs': '460px',
         '3xl': '1660px',
         '4xl': '1800px',
       },
