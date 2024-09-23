@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import AddRecipient from "./handleGuestList/addRecipient";
+import AddRecipients from "./handleGuestList/addRecipients";
 import RegisteredRecipients from "./handleGuestList/registeredRecipients";
 import { useRef } from "react";
 import ComporSectionContainer from "./comporSectionContainer";
@@ -58,7 +58,7 @@ export default function EmailRecipients() {
       </p>
       <div>
         <RegisteredRecipients />
-        <AddRecipient />
+        <AddRecipients />
       </div>
 
       <div>
