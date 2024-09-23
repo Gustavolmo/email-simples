@@ -26,6 +26,7 @@ export default function EmailTrackerStatus() {
     editorRef,
     guestList,
     updateGuestList,
+    setBase64Image,
   } = useEmailEditorStore();
 
   const emailActions = () => {
@@ -138,7 +139,7 @@ export default function EmailTrackerStatus() {
         guest,
         assunto,
         emailCopy || corpoDoEmail,
-        base64Image
+        imageTag ? base64Image : ""
       );
       if (cancelEmails) return;
       if (status === "success") {

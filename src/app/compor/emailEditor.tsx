@@ -72,7 +72,7 @@ export default function EmailEditor() {
       testEmailGuest,
       assunto,
       emailCopy || corpoDoEmail,
-      base64Image
+      imageTag ? base64Image : ""
     );
   };
 

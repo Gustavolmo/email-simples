@@ -42,7 +42,7 @@ export default function AddRecipient() {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
-      <button onClick={() => addGuestToList()} className="ml-8">
+      <button onClick={() => addGuestToList()} className="ml-8 flex items-center">
         <Image src={add} alt="add-guest" width={20} />
       </button>
     </div>
