@@ -2,7 +2,7 @@ import ComporSectionContainer from "./comporSectionContainer";
 import Button from "../shared/button";
 import useAppStateStore from "@/state-store/app-state-store";
 import { sendEmail } from "../api/sendEmail";
-import FailedRecipients from "./handleGuestList/failedRecipient";
+import FailedRecipients from "./handleGuestList/failedRecipients";
 import SuccessRecipients from "./handleGuestList/successRecipients";
 import useEmailEditorStore, {
   Recipient,

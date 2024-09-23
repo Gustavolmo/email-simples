@@ -1,6 +1,6 @@
 import * as XLSX from "xlsx";
 import AddRecipients from "./handleGuestList/addRecipients";
-import RegisteredRecipients from "./handleGuestList/registeredRecipient";
+import RegisteredRecipients from "./handleGuestList/registeredRecipients";
 import { useRef } from "react";
 import ComporSectionContainer from "./comporSectionContainer";
 import Button from "../shared/button";
