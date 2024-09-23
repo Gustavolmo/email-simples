@@ -1,67 +1,66 @@
-"use client";
 import * as XLSX from "xlsx";
-import AddRecipient from "./AddRecipient";
-import useComporStore from "@/state-store/compor/compor-store";
-import RegisteredRecipients from "./RegisteredRecipients";
+import AddRecipient from "./handleGuestList/addRecipient";
+import RegisteredRecipients from "./handleGuestList/registeredRecipients";
 import { useRef } from "react";
+import ComporSectionContainer from "./comporSectionContainer";
+import Button from "../shared/button";
+import Tooltip from "../shared/tooltip";
+import useEmailEditorStore from "@/state-store/email-editor-store";
 
 export default function EmailRecipients() {
-  const { guestList, updateGuestList } = useComporStore();
+  const { guestList, updateGuestList } = useEmailEditorStore();
   const excelInputRef = useRef<HTMLInputElement>(null);
-
-  const handleExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
-    const file = e.target.files[0];
-    const reader = new FileReader();
-
-    reader.onload = function (e) {
-      if (!e.target || !e.target.result) return;
-      const data = new Uint8Array(e.target.result as ArrayBuffer);
-      const workbook = XLSX.read(data, { type: "array" });
-
-      const firstSheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[firstSheetName];
-
-      if (!worksheet["!ref"]) return;
-      const range = XLSX.utils.decode_range(worksheet["!ref"]);
-      const columnsAB = [];
-      for (let row = range.s.r; row <= range.e.r; row++) {
-        if (row > 10_000) return;
-        const cellA = worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })]; // Column A
-        const cellB = worksheet[XLSX.utils.encode_cell({ r: row, c: 1 })]; // Column B
-        columnsAB.push({
-          name: cellA ? cellA.v : undefined,
-          email: cellB ? cellB.v : undefined,
-        });
-      }
-      columnsAB.map((guest) => {
-        guest.email.trim();
-        guest.name.trim();
-      });
-      updateGuestList(columnsAB);
-    };
-    reader.readAsArrayBuffer(file);
-    e.target.value = "";
-  };
 
   const handleProxyClick = () => {
     excelInputRef.current?.click();
   };
 
-  return (
-    <section className="p-20 max-w-[1500px] mx-auto">
-      <div className="bg-white mt-10 p-6 rounded-md">
-        <p className="text-2xl mb-2">{guestList.length} Recipientes:</p>
+  const handleExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
 
-        {guestList.map((guest, index) => (
-          <span key={index}>
-            <RegisteredRecipients name={guest.name} email={guest.email} />
-          </span>
-        ))}
-        <div className="flex items-center">
-          <AddRecipient />
-        </div>
+    const file = e.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      if (!e.target || !e.target.result) return;
+
+      const data = new Uint8Array(e.target.result as ArrayBuffer);
+      const workbook = XLSX.read(data, { type: "array" });
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      if (!worksheet["!ref"]) return;
+
+      const columnsAB = [];
+      const range = XLSX.utils.decode_range(worksheet["!ref"]);
+      for (let row = range.s.r; row <= range.e.r; row++) {
+        if (row > 10_000) return;
+
+        const cellA = worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })]; // Column A
+        const cellB = worksheet[XLSX.utils.encode_cell({ r: row, c: 1 })]; // Column B
+
+        columnsAB.push({
+          name: cellA ? cellA.v : undefined,
+          email: cellB ? cellB.v : undefined,
+        });
+      }
+
+      updateGuestList(columnsAB);
+    };
+
+    reader.readAsArrayBuffer(file);
+    e.target.value = "";
+  };
+
+  return (
+    <ComporSectionContainer className="flex flex-col gap-4">
+      <p className="text-2xl font-bold text-neutral-800">
+        {guestList.length} Recipientes
+      </p>
+      <div>
+        <RegisteredRecipients />
+        <AddRecipient />
       </div>
+
       <div>
         <input
           ref={excelInputRef}
@@ -71,26 +70,23 @@ export default function EmailRecipients() {
           id="excelFile"
           accept=".xlsx, .xls"
         />
-        <button
-          onClick={handleProxyClick}
-          className="border border-black my-2 py-2 px-4 w-52 bg-white"
-        >
-          UPLOAD DE EXCEL
-        </button>
-        <p>
-          <b>Atenção!</b> Sua lista de convidados deve exister na primeira aba
-          do seu excel
-        </p>
-        <p>
-          <b>A lista deve</b> iniciar na linha 1
-        </p>
-        <p>
-          <b>Coluna A</b> - Deve conter nomes
-        </p>
-        <p>
-          <b>Coluna B</b> - Deve conter emails
-        </p>
       </div>
-    </section>
+
+      <div className="flex gap-6 items-center">
+        <Button
+          className="!w-40 !h-12 !text-lg !p-0 !rounded-md text-neutral-800"
+          variant="neutral"
+          onMouseDown={handleProxyClick}
+        >
+          Upload Excel
+        </Button>
+        <Tooltip title="Sobre o upload" position="right">
+          <u>Crie a lista na primeira aba do arquivo</u> <br />
+          Iniciando na primeira linha: <br />
+          Coluna A deve conter os nomes <br />
+          Coluna B deve conter os emails
+        </Tooltip>
+      </div>
+    </ComporSectionContainer>
   );
 }
