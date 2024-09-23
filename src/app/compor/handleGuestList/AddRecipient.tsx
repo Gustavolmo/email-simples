@@ -1,9 +1,12 @@
-"use client";
-import useComporStore, { Recipient } from "@/state-store/compor-store";
+import useEmailEditorStore, {
+  Recipient,
+} from "@/state-store/email-editor-store";
 import { useState } from "react";
+import Image from "next/image";
+import add from "../../../assets/icons/add.png";
 
 export default function AddRecipient() {
-  const { guestList, updateGuestList } = useComporStore();
+  const { guestList, updateGuestList } = useEmailEditorStore();
   const [name, setName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
 
@@ -22,9 +25,9 @@ export default function AddRecipient() {
   };
 
   return (
-    <div className="flex gap-1 w-full">
+    <div className="flex w-full">
       <input
-        className="px-2 border border-neutral-400 grow"
+        className="px-2 border border-black border-r-0 grow shadow-retro-4x4 focus:outline-none"
         type="text"
         name="guest-name"
         placeholder="Nome"
@@ -32,15 +35,15 @@ export default function AddRecipient() {
         onChange={(e) => setName(e.target.value)}
       />
       <input
-        className="px-2 border border-neutral-400 grow"
+        className="px-2 border border-black grow shadow-retro-4x4 focus:outline-none"
         type="text"
         name="guest-email"
         placeholder="Email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
-      <button onClick={() => addGuestToList()} className="text-2xl mx-2 w-4">
-        +
+      <button onClick={() => addGuestToList()} className="ml-8">
+        <Image src={add} alt="add-guest" width={20} />
       </button>
     </div>
   );

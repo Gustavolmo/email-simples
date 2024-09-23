@@ -1,41 +1,28 @@
-"use client";
-import {
-  centerAlignmentIcon,
-  imageIcon,
-  leftAlignmentIcon,
-  rightAlignmentIcon,
-} from "@/assets/icons/hero-icons";
-import useComporStore, { Recipient } from "@/state-store/compor-store";
-import { RefObject, useCallback, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { sendEmail } from "../api/sendEmail";
 import { useSession } from "next-auth/react";
+import ComporSectionContainer from "./comporSectionContainer";
+import Tooltip from "../shared/tooltip";
+import Button from "../shared/button";
+import B from "../shared/b";
+import useEmailEditorStore from "@/state-store/email-editor-store";
+import EditorControls from "./editorControls";
 
 export default function EmailEditor() {
   const { data: session } = useSession();
-
-  const [base64Image, setBase64Image] = useState<string>("");
-  const [currentGuestListBatchLenth, setCurrentGuestListBatchLength] =
-    useState<number>(0);
-
   const editorRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const colorIndicatorLetterRef = useRef<HTMLParagraphElement>(null);
-
-  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-
   const {
-    failedEmail,
-    successEmail,
-    guestList,
     assunto,
     corpoDoEmail,
-    sendingEmail,
-    updateFailedEmails,
-    updateSuccessEmails,
+    base64Image,
     setAssunto,
     setCorpoDoEmail,
-    updateSendingEmail,
-  } = useComporStore();
+    setEditorRef,
+  } = useEmailEditorStore();
+
+  useEffect(() => {
+    setEditorRef(editorRef);
+  }, [setEditorRef, editorRef]);
 
   const handleAssuntoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAssunto(e.target.value);
@@ -45,92 +32,8 @@ export default function EmailEditor() {
     setCorpoDoEmail((e.target as HTMLDivElement).innerHTML);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target?.files?.[0];
-    if (file) insertImage(file);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  const handleProxyUploadClick = (
-    fileInputRef: RefObject<HTMLInputElement>
-  ) => {
-    if (editorRef.current?.querySelector("img")) {
-      alert("Máximo de 1 imagem por email");
-      return;
-    }
-    if (fileInputRef.current) fileInputRef.current.click();
-  };
-
-  const insertImage = (file: File) => {
-    if (file.type !== "image/png") {
-      alert("Apenas images tipo .PNG são suportadas");
-      return;
-    }
-    if (file.size > MAX_FILE_SIZE) {
-      alert("Seu arquivo deve ter menos de 9MB");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onloadend = (e: ProgressEvent<FileReader>) => {
-      setBase64Image(e.target?.result as string);
-
-      const img = document.createElement("img");
-      img.src = e.target?.result as string;
-      img.alt = "email-image";
-      img.style.width = "120px";
-      img.style.margin = "0 auto";
-
-      const emailEditor = editorRef.current;
-      if (emailEditor) emailEditor.append(img);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const applyFontFormat = useCallback(
-    (fontName: string, value: any | undefined = undefined) => {
-      if (editorRef.current) {
-        editorRef.current.focus();
-        document.execCommand(fontName, false, value);
-        setCorpoDoEmail(editorRef.current.innerHTML);
-      }
-    },
-    [setCorpoDoEmail]
-  );
-
-  const applyAlignment = useCallback(
-    (alignment: "justifyLeft" | "justifyCenter" | "justifyRight") => {
-      if (editorRef.current) {
-        editorRef.current.focus();
-        document.execCommand("formatBlock", false, "div");
-        document.execCommand("justifyLeft", false, undefined);
-        document.execCommand("justifyCenter", false, undefined);
-        document.execCommand("justifyRight", false, undefined);
-        document.execCommand(alignment, false, undefined);
-        setCorpoDoEmail(editorRef.current.innerHTML);
-      }
-    },
-    [setCorpoDoEmail]
-  );
-
-  const applyColor = useCallback(
-    (color: string) => {
-      if (editorRef.current) {
-        editorRef.current.focus();
-        document.execCommand("foreColor", false, color);
-        setCorpoDoEmail(editorRef.current.innerHTML);
-
-        if (colorIndicatorLetterRef.current)
-          colorIndicatorLetterRef.current.style.color = color;
-      }
-    },
-    [setCorpoDoEmail]
-  );
-
-  const handleSendEmail = async (
-    guestList: Recipient[],
-    isIsTesting: boolean = false
-  ) => {
-    const images = editorRef.current?.querySelectorAll("img");
+  const sendTestEmail = async () => {
+    const images = editorRef?.current?.querySelectorAll("img");
     if (images && images.length > 1) {
       alert("O email supporta no máximo 1 imagem");
       return;
@@ -143,21 +46,13 @@ export default function EmailEditor() {
       alert("O corpo do email não pode estar vazio");
       return;
     }
-    if (guestList.length === 0 && !isIsTesting) {
-      alert("Você precisa de pelo menos 1 destinatário");
-      return;
-    }
 
-    if (!isIsTesting) {
-      updateSendingEmail(true);
-    }
-
-    const imageTag = editorRef.current?.querySelector("img");
     let emailCopy: string = "";
+    const imageTag = editorRef?.current?.querySelector("img");
 
     if (imageTag) {
       const emailCopyWrapper = document.createElement("div");
-      emailCopyWrapper.innerHTML = editorRef.current?.innerHTML || "";
+      emailCopyWrapper.innerHTML = editorRef?.current?.innerHTML || "";
 
       const clonedImageTag = emailCopyWrapper.querySelector("img");
       if (clonedImageTag) {
@@ -168,53 +63,46 @@ export default function EmailEditor() {
       emailCopy = emailCopyWrapper.innerHTML;
     }
 
-    updateSuccessEmails([]);
-    updateFailedEmails([]);
-    let failListRegister: Recipient[] = [];
-    let successListRegister: Recipient[] = [];
+    const testEmailGuest = {
+      name: session!.user!.name!,
+      email: session!.user!.email!,
+    };
 
-    setCurrentGuestListBatchLength(guestList.length);
-
-    const promises = guestList.map(async (guest) => {
-      const status = await sendEmail(
-        guest,
-        assunto,
-        emailCopy || corpoDoEmail,
-        base64Image
-      );
-      if (status === "success") {
-        successListRegister.push(guest);
-        updateSuccessEmails(successListRegister);
-      }
-      if (status === "error") {
-        failListRegister.push(guest);
-        updateFailedEmails(failListRegister);
-      }
-    });
-
-    await Promise.all(promises);
-    updateSendingEmail(false);
+    await sendEmail(
+      testEmailGuest,
+      assunto,
+      emailCopy || corpoDoEmail,
+      base64Image
+    );
   };
 
   return (
     <>
-      <section className="p-20 max-w-[1500px] mx-auto text-xl font-normal">
-        <div className="flex flex-col text-neutral-600 items-left gap-2 mb-3 text-lg p-2">
-          <p>
-            Coloque o seguint texto onde você deseja ter o nome do convidado
-          </p>
-          <input
-            readOnly
-            onClick={async () =>
+      <ComporSectionContainer className="flex flex-col gap-8">
+        <div className="flex items-left gap-6 items-center">
+          <Button
+            onMouseDown={async () =>
               await navigator.clipboard.writeText("##guest##")
             }
-            className="border border-neutral-400 w-28 rounded-md px-2 bg-neutral-100 "
-            value={"##guest##"}
-          />
+            variant="neutral"
+            className="!w-44 !px-3 !py-2 !rounded-md !text-sm"
+          >
+            <input
+              readOnly
+              className="bg-es-neutral w-20 focus:outline-none"
+              value={"##guest##"}
+            />
+            | Copiar
+          </Button>{" "}
+          <Tooltip position="right" title="Adicionando o nome do convidado">
+            Coloque o texto <B>##guest##</B> onde você deseja ter o nome do
+            recipiente no corpo do email
+          </Tooltip>
         </div>
-        <article className="border-2 border-neutral-200 bg-neutral-200 shadow-lg">
+
+        <section>
           <input
-            className="w-full px-6 py-2 border"
+            className="w-full px-6 py-2 border border-black bg-white focus:outline-none focus:shadow-retro-4x4 transition-all"
             placeholder="assunto"
             type="text"
             name="assunto"
@@ -222,188 +110,32 @@ export default function EmailEditor() {
             onChange={handleAssuntoChange}
           />
 
-          <div className="h-12 bg-neutral-200 flex items-center px-6 border gap-8">
-            <div>
-              <input
-                type="file"
-                accept="image/*"
-                style={{ display: "none" }}
-                ref={fileInputRef}
-                onChange={handleImageUpload}
-              />
-              <div
-                className="bg-white rounded-md px-1 cursor-pointer"
-                onClick={() => handleProxyUploadClick(fileInputRef)}
-              >
-                {imageIcon("32px")}
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <button
-                onClick={() => applyFontFormat("bold")}
-                className="bg-white rounded-md w-8 h-8 font-extrabold"
-              >
-                n
-              </button>
-              <button
-                onClick={() => applyFontFormat("italic")}
-                className="bg-white rounded-md pr-1 w-8 h-8 italic"
-              >
-                i
-              </button>
-              <button
-                onClick={() => applyFontFormat("underline")}
-                className="bg-white rounded-md w-8 h-8 underline"
-              >
-                s
-              </button>
-            </div>
-
-            <div className="flex gap-4">
-              <button
-                onClick={() => applyAlignment("justifyLeft")}
-                className="bg-white rounded-md w-8 h-8 font-extrabold"
-              >
-                {leftAlignmentIcon("28px")}
-              </button>
-              <button
-                onClick={() => applyAlignment("justifyCenter")}
-                className="bg-white rounded-md w-8 h-8 font-extrabold flex items-center justify-center"
-              >
-                {centerAlignmentIcon("24px")}
-              </button>
-              <button
-                onClick={() => applyAlignment("justifyRight")}
-                className="bg-white rounded-md w-8 h-8 pl-1 font-extrabold"
-              >
-                {rightAlignmentIcon("28px")}
-              </button>
-            </div>
-
-            <div className="flex gap-4">
-              <select
-                className="w-20 truncate text-base"
-                onChange={(e) => {
-                  applyFontFormat("fontName", e.target.value);
-                  e.target.value = "";
-                }}
-              >
-                <option className="hidden" value="">
-                  Font
-                </option>
-                <option value="Arial">Arial</option>
-                <option value="Times New Roman">Times New Roman</option>
-                <option value="Courier New">Courier New</option>
-              </select>
-
-              <select
-                className="w-20 truncate text-base"
-                onChange={(e) => {
-                  applyFontFormat("fontSize", e.target.value);
-                  e.target.value = "";
-                }}
-              >
-                <option className="hidden" value="">
-                  Size
-                </option>
-                <option value="3">normal</option>
-                <option value="5">médio</option>
-                <option value="6">Grande</option>
-                <option value="7">XGrande</option>
-              </select>
-            </div>
-
-            <div className="flex gap-1">
-              <p ref={colorIndicatorLetterRef}>A</p>
-              <input
-                className="w-8"
-                onChange={(e) => applyColor(e.target.value)}
-                type="color"
-              />
-            </div>
-          </div>
+          <EditorControls />
 
           <div
-            className="min-h-[600px] py-10 px-20 text-[16px] bg-white border"
+            className="min-h-[600px] py-10 px-20 text-[16px] bg-white border border-black focus:outline-none focus:shadow-retro-4x4 transition-all"
             id="email-editor"
             contentEditable
             ref={editorRef}
             onInput={handleCorpoChange}
           />
+        </section>
 
-          <div className="p-2 flex items-center gap-2 w-[500px]">
-            <button
-              className="border border-black my-2 p-2 px-4 w-52 bg-white rounded-md"
-              onClick={() =>
-                handleSendEmail(
-                  [
-                    {
-                      name: session!.user!.name!,
-                      email: session!.user!.email!,
-                    },
-                  ],
-                  true
-                )
-              }
-            >
-              Teste
-            </button>
-            <p className="text-sm italic">
-              Selecione para enviar <b>1 convite</b>
-              <br /> para o seu próprio email como teste
-            </p>
-          </div>
-        </article>
-
-        {/* SEND FOR REAL */}
-        <article className="border-2 border-neutral-200 mt-16 shadow-lg">
-          <div className="my-16 flex justify-center">
-            <button
-              onClick={() => handleSendEmail(guestList)}
-              className="border text-3xl rounded-md text-white bg-es-blue my-2 py-4 px-6 w-fit"
-            >
-              Enviar Todos
-            </button>
-          </div>
-
-          {/* STATUS COUNTER */}
-          <div className="flex flex-col gap-4 p-4 bg-white border-2 border-neutral-200">
-            <p
-              className={`text-2xl ${
-                sendingEmail ? "text-green-600" : "text-neutral-800"
-              }`}
-            >
-              <b>{sendingEmail ? "Enviando..." : "Enviados:"}</b>{" "}
-              {successEmail.length} de {currentGuestListBatchLenth}
-            </p>
-            {failedEmail.length > 0 && (
-              <>
-                <p className="text-red-600 leading-3">
-                  <b>Não enviados: {failedEmail.length}</b> <br />
-                  <span className="text-thin text-sm">
-                    confira se os emails estão corretos
-                  </span>
-                </p>
-                <div>
-                  {failedEmail.map((failedGuest, index) => {
-                    return (
-                      <div className="flex gap-1" key={index}>
-                        <p className="border border-red-500 px-2 grow bg-neutral-100">
-                          {failedGuest.name}
-                        </p>
-                        <p className="border border-red-500 px-2 grow bg-neutral-100">
-                          {failedGuest.email}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </div>
-        </article>
-      </section>
+        <div className="p-2 flex items-center justify-end gap-6">
+          <Tooltip position="left" title="Envio teste">
+            Selecione para enviar <B>1 convite</B>
+            <br /> para o seu próprio email como teste e
+            <br /> conferir se o formato está satisfatório
+          </Tooltip>
+          <Button
+            className="!p-2 !px-4 !w-52 !text-lg !rounded-md"
+            variant="neutral"
+            onMouseDown={sendTestEmail}
+          >
+            Teste
+          </Button>
+        </div>
+      </ComporSectionContainer>
     </>
   );
 }

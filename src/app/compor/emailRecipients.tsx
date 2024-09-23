@@ -1,12 +1,14 @@
-"use client";
 import * as XLSX from "xlsx";
-import AddRecipient from "./handleGuestList/AddRecipient";
-import useComporStore from "@/state-store/compor-store";
-import RegisteredRecipients from "./handleGuestList/RegisteredRecipients";
+import AddRecipient from "./handleGuestList/addRecipient";
+import RegisteredRecipients from "./handleGuestList/registeredRecipients";
 import { useRef } from "react";
+import ComporSectionContainer from "./comporSectionContainer";
+import Button from "../shared/button";
+import Tooltip from "../shared/tooltip";
+import useEmailEditorStore from "@/state-store/email-editor-store";
 
 export default function EmailRecipients() {
-  const { guestList, updateGuestList } = useComporStore();
+  const { guestList, updateGuestList } = useEmailEditorStore();
   const excelInputRef = useRef<HTMLInputElement>(null);
 
   const handleProxyClick = () => {
@@ -50,14 +52,15 @@ export default function EmailRecipients() {
   };
 
   return (
-    <section className="p-20 max-w-[1500px] mx-auto">
-      <p className="text-2xl font-bold text-neutral-600 border-2 border-b-0 p-2">
+    <ComporSectionContainer className="flex flex-col gap-4">
+      <p className="text-2xl font-bold text-neutral-800">
         {guestList.length} Recipientes
       </p>
-      <div className="bg-gray-50 border-2 border-t-0">
+      <div>
         <RegisteredRecipients />
         <AddRecipient />
       </div>
+
       <div>
         <input
           ref={excelInputRef}
@@ -69,30 +72,21 @@ export default function EmailRecipients() {
         />
       </div>
 
-      <div className="mt-0 border-2 border-t-0 p-2 shadow-lg">
-        <button
-          onClick={handleProxyClick}
-          className="border border-neutral-800 my-2 py-2 px-4 w-52 rounded-lg bg-neutral-100 font-bold"
+      <div className="flex gap-6 items-center">
+        <Button
+          className="!w-40 !h-12 !text-lg !p-0 !rounded-md text-neutral-800"
+          variant="neutral"
+          onMouseDown={handleProxyClick}
         >
-          UPLOAD DE EXCEL
-        </button>
-        <div className="text-neutral-600">
-          <p>
-            <b>Atenção!</b>
-            <br />
-            Sua lista de convidados deve exister na primeira aba do seu excel
-          </p>
-          <p>
-            <b>A lista deve</b> iniciar na linha 1
-          </p>
-          <p>
-            <b>Coluna A</b> - Deve conter nomes
-          </p>
-          <p>
-            <b>Coluna B</b> - Deve conter emails
-          </p>
-        </div>
+          Upload Excel
+        </Button>
+        <Tooltip title="Sobre o upload" position="right">
+          <u>Crie a lista na primeira aba do arquivo</u> <br />
+          Iniciando na primeira linha: <br />
+          Coluna A deve conter os nomes <br />
+          Coluna B deve conter os emails
+        </Tooltip>
       </div>
-    </section>
+    </ComporSectionContainer>
   );
 }
