@@ -5,7 +5,7 @@ import { useState } from "react";
 import Image from "next/image";
 import add from "../../../assets/icons/add.png";
 
-export default function AddRecipient() {
+export default function AddRecipients() {
   const { guestList, updateGuestList } = useEmailEditorStore();
   const [name, setName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
