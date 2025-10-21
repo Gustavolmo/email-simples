@@ -79,7 +79,7 @@ export async function sendEmail(
   const uniqueEmailBody = emailBody.replace(/(##guest##)/g, recipient.name);
 
   const emailMessage = createEmailMessage(
-    session.user!.email!,
+    session.user!.name!,
     recipient.email,
     emailSubject,
     uniqueEmailBody,
