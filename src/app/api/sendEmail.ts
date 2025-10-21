@@ -12,6 +12,7 @@ type Recipient = {
 };
 
 function createEmailMessage(
+  email: string,
   from: string,
   to: string,
   subject: string,
@@ -22,8 +23,9 @@ function createEmailMessage(
   const strippedBase64Image = base64Image.replace(prefixRegex, "");
 
   const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString("base64")}?=`;
+
   const messageParts = [
-    `From: <${from}>`,
+    `From: ${from} <${email}>`,
     `To: ${to}`,
     `Subject: ${utf8Subject}`,
     "MIME-Version: 1.0",
@@ -79,7 +81,8 @@ export async function sendEmail(
   const uniqueEmailBody = emailBody.replace(/(##guest##)/g, recipient.name);
 
   const emailMessage = createEmailMessage(
-    session.user!.name!,
+    session.user!.email!,
+    session.user!.name! ?? session.user!.email!,
     recipient.email,
     emailSubject,
     uniqueEmailBody,
